@@ -1,0 +1,12 @@
+# Ignore compiled Python files
+__pycache__/
+*.py[cod]
+
+# Ignore Python env
+venv/
+
+# Ignore Training Results
+results/
+
+#Ignore Imgae Data
+content/
