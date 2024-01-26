@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import math
 import torchvision.utils as vutils
+import numpy as np
 
 def showDataset(base_path):
     data_path = base_path + '55/'
@@ -49,4 +50,34 @@ def show_all_images(data_loader):
     plt.figure(figsize=(12, 6))
     plt.imshow(image_grid)
     plt.axis('off')
+    plt.show()
+
+def show_evaluation_images(results,base_path, class_labels=None, num_cols=4):
+    original_images = results['original_images']
+    true_labels = results['true_labels']
+    predicted_labels = results['predicted_labels']
+    num_images = len(original_images)
+    num_rows = (num_images + num_cols - 1) // num_cols
+
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(12, 3 * num_rows))
+
+    for i,image in enumerate(original_images):
+    # Calculate the row and column indices for the subplot
+        row = i // num_cols
+        col = i % num_cols
+        true_label = true_labels[i]
+        predicted_label = predicted_labels[i]
+        # Display the image with true and predicted labels as the title
+        ax = axes[row, col]
+        image = np.transpose(image, (1, 2, 0))
+        ax.imshow(image)
+        ax.set_title(f'True: {class_labels[true_label]}\nPredicted: {class_labels[predicted_label]}')
+        ax.axis('off')
+
+
+    # Remove empty subplots, if any
+    for i in range(len(original_images), num_rows * num_cols):
+        fig.delaxes(axes.flatten()[i])
+
+    plt.tight_layout()
     plt.show()

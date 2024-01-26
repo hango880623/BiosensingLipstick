@@ -34,29 +34,35 @@ def loadData():
         "./content/Pixel",
         "./content/CanonF",
         "./content/PixelF",
-        "./content/IphoneF"
+        "./content/IphoneF",
+        "./content/Canon0119",
+        "./content/Canon0122"
     ]
     for directory in directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
     # Define the source and target directories
-    source_directories = [
-        "./content/Canon/lips",
-        "./content/Pixel/lips",
-        "./content/CanonF/lips",
-        "./content/PixelF/lips",
-        "./content/IphoneF/lips"
-    ]
-    unzip_file('./content/zipfile/lips1004_Canon.zip', './content/Canon/')
-    unzip_file('./content/zipfile/lips1004_Pixel.zip', './content/Pixel/')
-    unzip_file('./content/zipfile/lips1130_Canon.zip', './content/CanonF/')
-    unzip_file('./content/zipfile/lips1130_Pixel.zip', './content/PixelF/')
-    unzip_file('./content/zipfile/lips1130_Iphone.zip', './content/IphoneF/')
+    # source_directories = [
+    #     "./content/Canon/lips",
+    #     "./content/Pixel/lips",
+    #     "./content/CanonF/lips",
+    #     "./content/PixelF/lips",
+    #     "./content/IphoneF/lips"
+    # ]
+    # unzip_file('./content/zipfile/lips1004_Canon.zip', './content/Canon/')
+    # unzip_file('./content/zipfile/lips1004_Pixel.zip', './content/Pixel/')
+    # unzip_file('./content/zipfile/lips1130_Canon.zip', './content/CanonF/')
+    # unzip_file('./content/zipfile/lips1130_Pixel.zip', './content/PixelF/')
+    # unzip_file('./content/zipfile/lips1130_Iphone.zip', './content/IphoneF/')
+    # source_directories = ["./content/Canon0119/lips","./content/Pixel0119/lips" ]
+    # unzip_file('./content/zipfile/lips0116_Canon.zip', './content/Canon0119/')
+    # unzip_file('./content/zipfile/lips0116_Pixel.zip', './content/Pixel0119/')
+    source_directories = ["./content/Canon0122/lips","./content/Canon0119/lips","./content/Pixel0119/lips"]
 
-    target_directory = "./content/Full/lips"
+    target_directory = "./content/New/lips"
 
     # List of subdirectories to combine
-    subdirectories_to_combine = ['55', '60', '65', '70', '75', '80']
+    subdirectories_to_combine = ['55', '60', '65', '70', '80']
 
     # Create the target directory if it doesn't exist
     if not os.path.exists(target_directory):

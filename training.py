@@ -2,6 +2,8 @@ import torch
 import torchvision
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.models import ResNet18_Weights
+from torchvision.models import ResNet50_Weights
+
 
 from model import CustomResNetModel
 import numpy as np
@@ -14,7 +16,7 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print('Now using: ',device)
-
+    print(model_type)
     # Load the certain model
     if model_type == 'resnet18':
       model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
@@ -23,7 +25,7 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
       optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
       print("model: resnet18")
     elif model_type == 'resnet50':
-      model = torchvision.models.resnet50(weights=True)
+      model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
       criterion = torch.nn.CrossEntropyLoss()
       optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
       print("model: resnet50")
@@ -116,7 +118,7 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
                 # print(f'Validation Loss: {avg_valid_loss:.4f}')
 
                 # Save the model if it has the highest accuracy so far
-                if accuracy > best_accuracy:
+                if accuracy >= best_accuracy:
                     best_accuracy = accuracy
                     best_model = model.state_dict()  # Save model weights
         else:

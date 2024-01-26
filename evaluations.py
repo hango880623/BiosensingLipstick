@@ -4,6 +4,7 @@ import torchvision
 from torchmetrics.classification import MulticlassConfusionMatrix
 import numpy as np
 
+
 from model import CustomResNetModel
 
 def plotLossGraph(train_losses,valid_losses):
@@ -19,7 +20,7 @@ def plotLossGraph(train_losses,valid_losses):
 
 def evaluation(test_loader, best_model, model_type = 'resnet18'):
     # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     # Load the certain model
     if model_type == 'resnet18':
       model = torchvision.models.resnet18(weights=True)
@@ -37,6 +38,7 @@ def evaluation(test_loader, best_model, model_type = 'resnet18'):
     model.eval()
 
     # Initialize variables to store the true labels and predicted labels
+    original_images = []
     true_labels = []
     predicted_labels = []
 
@@ -49,18 +51,19 @@ def evaluation(test_loader, best_model, model_type = 'resnet18'):
             _, predicted = torch.max(outputs.data, 1)
 
             # Append true and predicted labels to the respective lists
+            original_images.extend(images.cpu().numpy())
             true_labels.extend(labels.cpu().numpy())
             predicted_labels.extend(predicted.cpu().numpy())
 
     # Convert lists to NumPy arrays
     true_labels = np.array(true_labels)
     predicted_labels = np.array(predicted_labels)
-
     if model_type != 'customresnet':
         # Calculate the test accuracy
         test_accuracy = 100 * np.sum(true_labels == predicted_labels) / len(true_labels)
         print(f"Test Accuracy: {test_accuracy:.2f}%")
-        metric = MulticlassConfusionMatrix(num_classes=6)
+        metric = MulticlassConfusionMatrix(num_classes=5)
         metric.update(torch.tensor(predicted_labels),torch.tensor(true_labels))
         fig_, ax_ = metric.plot()
-    return model
+    results = {'original_images': original_images, 'true_labels': true_labels, 'predicted_labels': predicted_labels}
+    return model, results
