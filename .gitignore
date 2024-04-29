@@ -10,3 +10,5 @@ results/
 
 #Ignore Imgae Data
 content/
+
+.DS_Store/

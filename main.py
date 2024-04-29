@@ -5,7 +5,7 @@ import torch
 import time
 
 if __name__ == "__main__":
-    torch.manual_seed(87)
+    torch.manual_seed(99)
     if torch.backends.mps.is_available():
         mps_device = torch.device("mps")
         x = torch.ones(1, device=mps_device)

@@ -57,9 +57,9 @@ def loadData():
     # source_directories = ["./content/Canon0119/lips","./content/Pixel0119/lips" ]
     # unzip_file('./content/zipfile/lips0116_Canon.zip', './content/Canon0119/')
     # unzip_file('./content/zipfile/lips0116_Pixel.zip', './content/Pixel0119/')
-    source_directories = ["./content/Canon0122/lips","./content/Canon0119/lips","./content/Pixel0119/lips"]
+    source_directories = ["./content/Canon0122/lips"] # ,"./content/Canon0119/lips","./content/Pixel0119/lips"
 
-    target_directory = "./content/New/lips"
+    target_directory = "./content/Fake/lips"
 
     # List of subdirectories to combine
     subdirectories_to_combine = ['55', '60', '65', '70', '80']

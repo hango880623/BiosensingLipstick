@@ -18,7 +18,7 @@ def dataLoader(base_path):
         transforms.Resize(256),
         transforms.RandomHorizontalFlip(),
         # transforms.Lambda(crop1000),
-        transforms.RandomCrop(216),
+        # transforms.RandomCrop(216),
         transforms.ToTensor()
     ])
 
@@ -93,6 +93,28 @@ def ExpDataLoader(base_path):
     )
 
     # Create a DataLoader for the entire dataset
+    data_loader = torch.utils.data.DataLoader(origin_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+
+    return data_loader
+
+def api_dataLoader(base_path):
+
+    # Set hyperparameters
+    batch_size = 8
+
+    # Initialize transformations for data augmentation
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        # transforms.CenterCrop(216),
+        transforms.ToTensor()
+    ])
+
+    # Load the ImageNet Object Localization Challenge dataset
+    origin_dataset = torchvision.datasets.ImageFolder(
+        root=base_path,
+        transform=transform
+    )
+
     data_loader = torch.utils.data.DataLoader(origin_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
     return data_loader
