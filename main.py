@@ -14,7 +14,7 @@ if __name__ == "__main__":
         print ("MPS device not found.")
     base_exp_path = ['./content/SkinTone/lips/','./content/Device/lips/','./content/LightCondition/lips/','./content/pH/lips/']
     
-    full_path = './content/New/lips/'
+    full_path = './content/GenAI/lips/'
     base_path = full_path
     cleanDS_Store(base_path)
     train_loader, valid_loader, test_loader = dataLoader(base_path)

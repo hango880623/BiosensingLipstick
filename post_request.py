@@ -14,6 +14,7 @@ transform = transforms.Compose([
     # transforms.CenterCrop(216),
     transforms.ToTensor()
 ])
+pH_value = {0: '5.5', 1: '6.0', 2: '6.5',3: '7.0',4: '8.0'}
 
 # Load the certain model
 def load_model(model_path, model_type = 'resnet18'):

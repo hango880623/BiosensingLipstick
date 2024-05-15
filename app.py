@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import os
-from post_request import load_model, predict
+from post_request import load_model, predict, pH_value
 
 result_folder = './results/results_2024-01-26_07-28-04-p-cen'
 model_path = os.path.join(result_folder, 'best_resnet18_0.001_50.pth')
@@ -29,7 +29,7 @@ def prediction():
         for file in files:
             file_data = file.read()
             prediction = predict(model, file_data)
-            predictions.append(prediction.item())
+            predictions.append(pH_value[prediction.item()])
         
         return jsonify({'predictions': predictions})
     

@@ -15,7 +15,7 @@ def dataLoader(base_path):
 
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
-        transforms.Resize(256),
+        transforms.Resize((256,256)),
         transforms.RandomHorizontalFlip(),
         # transforms.Lambda(crop1000),
         # transforms.RandomCrop(216),
@@ -60,8 +60,8 @@ def original_dataLoader(base_path):
     )
 
     n = len(origin_dataset)  # total number of examples
-    n_test = int(0.1 * n)  # take ~10% for test
-    n_validation = int(0.1 * n)  # take ~10% for validation
+    n_test = int(n)  # take ~10% for test
+    n_validation = int(0)  # take ~10% for validation
     print('training: ',n-n_test-n_validation,'test: ',n_test,'validation: ',n_validation)
 
     train_dataset, validation_dataset , test_dataset= torch.utils.data.random_split(origin_dataset, [n-n_test-n_validation, n_test,n_validation])
@@ -104,7 +104,7 @@ def api_dataLoader(base_path):
 
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
-        transforms.Resize(256),
+        transforms.Resize((256,256)),
         # transforms.CenterCrop(216),
         transforms.ToTensor()
     ])
@@ -114,7 +114,6 @@ def api_dataLoader(base_path):
         root=base_path,
         transform=transform
     )
-
     data_loader = torch.utils.data.DataLoader(origin_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
     return data_loader
