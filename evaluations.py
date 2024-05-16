@@ -5,7 +5,7 @@ from torchmetrics.classification import MulticlassConfusionMatrix
 import numpy as np
 
 
-from model import CustomResNetModel
+from model import CustomResNetModel, SmallCNN
 
 def plotLossGraph(train_losses,valid_losses):
     # Plot the training and validation loss curves
@@ -28,6 +28,8 @@ def evaluation(test_loader, best_model, model_type = 'resnet18'):
       model = torchvision.models.resnet50(weights=True)
     elif model_type == 'customresnet':
       model = CustomResNetModel()
+    elif model_type == 'smallcnn':
+      model = SmallCNN(num_classes=5)
 
     model = torch.nn.DataParallel(model)
     model = model.to(device)

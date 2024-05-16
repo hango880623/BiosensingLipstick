@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
+from load_data import cleanDS_Store
+from data_loader import dataLoader
+from training import train
 import torch
+import time
 
 # Define a function to display all images in the test loader with true and predicted labels as subplots
 def show_all_images_with_labels(test_loader, model, class_labels=None, num_cols=4):
@@ -53,3 +57,33 @@ def show_all_images_with_labels(test_loader, model, class_labels=None, num_cols=
 
     plt.tight_layout()
     plt.show()
+
+if __name__ == "__main__":
+
+    torch.manual_seed(99)
+    if torch.backends.mps.is_available():
+        mps_device = torch.device("mps")
+        x = torch.ones(1, device=mps_device)
+        print (x)
+    else:
+        print ("MPS device not found.")
+
+    full_path = './content/WoShuyi/lips/'
+    print(full_path)
+    base_path = full_path
+    cleanDS_Store(base_path)
+    train_loader, valid_loader, test_loader = dataLoader(base_path)
+
+    start_time = time.time()
+    # model_types = ['customresnet','resnet50','resnet18', 'smallcnn']
+    folder_name = './results/results_2024-05-15-smallcnn'
+    train_losses, valid_losses, model_path = train(folder_name, train_loader, valid_loader, model_type = 'smallcnn', num_epochs = 50, learning_rate = 0.001, pretrained=False)
+
+    end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    print(f"Training time: {elapsed_time} seconds")
+
+    elapsed_time_minutes = elapsed_time / 60
+
+    print(f"Training time: {elapsed_time_minutes:.2f} minutes")

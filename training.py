@@ -5,13 +5,13 @@ from torchvision.models import ResNet18_Weights
 from torchvision.models import ResNet50_Weights
 
 
-from model import CustomResNetModel
+from model import CustomResNetModel, SmallCNN
 import numpy as np
 
 import os
 import datetime
 
-def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, learning_rate = 0.001):
+def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, learning_rate = 0.001, pretrained = True):
     # Set device
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -19,23 +19,32 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
     print(model_type)
     # Load the certain model
     if model_type == 'resnet18':
-      model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
-      # Define the loss function and optimizer
-      criterion = torch.nn.CrossEntropyLoss()
-      optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-      print("model: resnet18")
+        model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        # Define the loss function and optimizer
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        print("model: resnet18")
     elif model_type == 'resnet50':
-      model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
-      criterion = torch.nn.CrossEntropyLoss()
-      optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-      print("model: resnet50")
+        model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        print("model: resnet50")
     elif model_type == 'customresnet':
-      model = CustomResNetModel()
-      criterion = torch.nn.MSELoss()
-      optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
-      print("model: customresnet")
+        model = CustomResNetModel()
+        criterion = torch.nn.MSELoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+        print("model: customresnet")
+    elif model_type == 'smallcnn':
+        model = SmallCNN(num_classes=5)
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        print("model: smallcnn")
 
-    model = torch.nn.DataParallel(model)
+    if pretrained:
+        model_path = os.path.join(folder_name,'best.pth')
+        model.load_state_dict(torch.load(model_path))
+    else:
+        model = torch.nn.DataParallel(model)
     model = model.to(device)
 
     # Learning rate scheduler
@@ -51,11 +60,12 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
     train_losses = []
     valid_losses = []
 
-    # Get the current date and time
-    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    # Create a folder with the current date and time
-    folder_name = os.path.join('results',f"results_{current_datetime}")
-    os.makedirs(folder_name)
+    # # Get the current date and time
+    # current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # # Create a folder with the current date and time
+    # folder_name = os.path.join('results',f"results_{current_datetime}")
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
 
     # Train the model...
     for epoch in range(num_epochs):
@@ -90,7 +100,7 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
 
         # Step the learning rate scheduler
         scheduler.step(avg_train_loss)
-        if model_type == 'resnet18' or  model_type == 'resnet50':
+        if model_type == 'resnet18' or  model_type == 'resnet50' or model_type == 'smallcnn':
             # Validation part
             with torch.no_grad():
                 valid_loss = 0.0
@@ -147,11 +157,11 @@ def train(train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, 
                     best_loss = avg_valid_loss
                     best_model = model.state_dict()  # Save model weights
 
-
-    # Save the best model to a file
-    save_name = f'best_{model_type}_{learning_rate}_{num_epochs}.pth'
-    save_path = os.path.join(folder_name, save_name)
-    torch.save(best_model, save_path)
+        if epoch % 10 == 0:
+            # Save the best model to a file
+            save_name = f'best.pth'
+            save_path = os.path.join(folder_name, save_name)
+            torch.save(best_model, save_path)
     if model_type == 'resnet18' or  model_type == 'resnet50':
         print(f'Finished Training, Best Validation Accuracy: {best_accuracy:.2f}%')
     else:

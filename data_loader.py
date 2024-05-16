@@ -2,6 +2,31 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from torchvision.transforms.functional import crop
+from skimage.io import imread
+from skimage.color import rgb2gray
+from skimage.filters import threshold_otsu
+
+# Custom dataset class to apply masking
+class CustomImageFolder(torchvision.datasets.ImageFolder):
+    def __getitem__(self, index):
+        path, _ = self.samples[index]
+        # Apply masking
+        img = mask_lips(path, 0.3)
+        # Apply transformations
+        if self.transform is not None:
+            img = self.transform(img)
+        return img
+
+def mask_lips(img_path, threshold):
+    # Load the image
+    img = imread(img_path)
+    img_gray = rgb2gray(img)
+    # Apply the threshold to create a binary mask
+    img_mask = img_gray < threshold
+    # Apply the mask to the original image
+    img_masked = img.copy()
+    img_masked[~img_mask] = 0  # Set non-lips pixels to black
+    return img_masked
 
 def crop800(image):
     return crop(image, 52, 82, 128, 128)
@@ -18,7 +43,7 @@ def dataLoader(base_path):
         transforms.Resize((256,256)),
         transforms.RandomHorizontalFlip(),
         # transforms.Lambda(crop1000),
-        # transforms.RandomCrop(216),
+        transforms.CenterCrop((128,128)),
         transforms.ToTensor()
     ])
 
@@ -105,7 +130,7 @@ def api_dataLoader(base_path):
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
         transforms.Resize((256,256)),
-        # transforms.CenterCrop(216),
+        transforms.CenterCrop((128,128)),
         transforms.ToTensor()
     ])
 
