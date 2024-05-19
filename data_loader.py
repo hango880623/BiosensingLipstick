@@ -1,21 +1,25 @@
 import torch
 import torchvision
+import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from torchvision.transforms.functional import crop
 from skimage.io import imread
 from skimage.color import rgb2gray
 from skimage.filters import threshold_otsu
+from PIL import Image 
 
-# Custom dataset class to apply masking
-class CustomImageFolder(torchvision.datasets.ImageFolder):
+class ImageFolderWithPaths(datasets.ImageFolder):
+    """Custom dataset that includes image file paths. Extends
+    torchvision.datasets.ImageFolder.
+    """
     def __getitem__(self, index):
-        path, _ = self.samples[index]
-        # Apply masking
-        img = mask_lips(path, 0.3)
-        # Apply transformations
-        if self.transform is not None:
-            img = self.transform(img)
-        return img
+        # This is what ImageFolder normally returns 
+        original_tuple = super(ImageFolderWithPaths, self).__getitem__(index)
+        # The image file path
+        path = self.imgs[index][0]
+        # Make a new tuple that includes original and the path
+        tuple_with_path = (original_tuple[0], original_tuple[1], path)
+        return tuple_with_path
 
 def mask_lips(img_path, threshold):
     # Load the image
@@ -40,10 +44,11 @@ def dataLoader(base_path):
 
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
-        transforms.Resize((256,256)),
+        transforms.Resize((512,512)),
+        transforms.CenterCrop(256),
         transforms.RandomHorizontalFlip(),
         # transforms.Lambda(crop1000),
-        transforms.CenterCrop((128,128)),
+        transforms.RandomCrop((128,128)),
         transforms.ToTensor()
     ])
 
@@ -129,8 +134,10 @@ def api_dataLoader(base_path):
 
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
-        transforms.Resize((256,256)),
+        transforms.Resize((512,512)),
+        transforms.CenterCrop(256),
         transforms.CenterCrop((128,128)),
+        # transforms.Resize((128,128)),
         transforms.ToTensor()
     ])
 
@@ -142,3 +149,20 @@ def api_dataLoader(base_path):
     data_loader = torch.utils.data.DataLoader(origin_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
     return data_loader
+
+if __name__ == "__main__":
+    # Read image 
+    image = Image.open('/Users/kuyuanhao/Documents/Imyphone/iMyFone D-Back for Mac/D-Back Recovery/PC_Recover/D-Back for Mac 20240517-064555/All Files/Photo/JPG/6P8A4491.JPG') 
+    
+    # create an transform for crop the image 
+    transform = transforms.Compose([
+        transforms.Resize((512,512)),
+        transforms.CenterCrop(320),
+        transforms.RandomResizedCrop(size=(128, 128),scale=(0.2, 0.8))
+    ])
+    # use above created transform to crop 
+    # the image 
+    image_crop = transform(image) 
+    
+    # display result 
+    image_crop.show() 

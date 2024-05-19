@@ -40,12 +40,13 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         print("model: smallcnn")
 
+    model = torch.nn.DataParallel(model)
+    model = model.to(device)
     if pretrained:
         model_path = os.path.join(folder_name,'best.pth')
         model.load_state_dict(torch.load(model_path))
-    else:
-        model = torch.nn.DataParallel(model)
-    model = model.to(device)
+
+    
 
     # Learning rate scheduler
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5) #, verbose=True
