@@ -25,19 +25,30 @@ class CustomResNetModel(nn.Module):
     def forward(self, x):
         return self.resnet(x)
     
-# Define a small CNN model
 class SmallCNN(nn.Module):
     def __init__(self, num_classes):
         super(SmallCNN, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),  # Output size: 224x224
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Output size: 112x112
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1), # Output size: 112x112
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2)
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Output size: 56x56
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1), # Output size: 56x56
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Output size: 28x28
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1), # Output size: 28x28
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Output size: 14x14
         )
-        self.classifier = nn.Linear(32 * 32 * 32, num_classes)  # Adjusted input size based on your image dimensions
+        self.classifier = nn.Sequential(
+            # nn.Dropout(p=0.1),  # Add dropout with a probability of 0.5
+            nn.Linear(128 * 14 * 14, num_classes)  # Adjusted to 25088
+        )
 
     def forward(self, x):
         x = self.features(x)

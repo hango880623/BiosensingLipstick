@@ -1,14 +1,17 @@
 import os
 from PIL import Image
+import pandas as pd
+from colormath.color_objects import sRGBColor, LabColor
+from colormath.color_conversions import convert_color
 
 dir = ['55','60','65','70','80']
-def separate_image(folder,without_folder, with_folder):
+def separate_image(folder,without_folder, with_folder, selected = '0'):
     for pH in dir:
         path = os.path.join(folder,pH)
         for filename in os.listdir(path):
             if filename.endswith('.jpg') or filename.endswith('.png'):
                 input_file_path = os.path.join(path, filename)
-                if filename.split('_')[1] == '0':
+                if filename.split('_')[1] == selected:
                     output_folder = os.path.join(with_folder, pH)
                     if not os.path.exists(output_folder):
                         os.makedirs(output_folder)
@@ -21,16 +24,6 @@ def separate_image(folder,without_folder, with_folder):
                 os.rename(input_file_path, output_file_path)
 
 def center_crop_image(image_path, output_size):
-    """
-    Center-crops an image to the specified output size.
-    
-    Args:
-        image_path (str): Path to the input image file.
-        output_size (tuple): Output size in the format (width, height).
-    
-    Returns:
-        PIL.Image: Center-cropped image.
-    """
     image = Image.open(image_path)
     width, height = image.size
     target_width, target_height = output_size
@@ -44,13 +37,6 @@ def center_crop_image(image_path, output_size):
     return cropped_image
 
 def center_crop_images_in_folder(folder_path, output_size, output_folder):
-    """
-    Center-crops all images in a folder to the specified output size.
-    
-    Args:
-        folder_path (str): Path to the folder containing images.
-        output_size (tuple): Output size in the format (width, height).
-    """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -64,13 +50,6 @@ def center_crop_images_in_folder(folder_path, output_size, output_folder):
             print(f"Center-cropped {filename} saved as cropped_{filename}")
 
 def divide_image_into_four(image_path, output_folder):
-    """
-    Divides an image into four equal parts and saves them to the output folder.
-    
-    Args:
-        image_path (str): Path to the input image file.
-        output_folder (str): Path to the folder where the output images will be saved.
-    """
     image = Image.open(image_path)
     width, height = image.size
     
@@ -98,13 +77,6 @@ def divide_image_into_four(image_path, output_folder):
         print(f"Saved {output_image_path}")
 
 def divide_images_in_folder(folder_path, output_folder):
-    """
-    Divides all images in a folder into four equal parts and saves them to the output folder.
-    
-    Args:
-        folder_path (str): Path to the folder containing images.
-        output_folder (str): Path to the folder where the output images will be saved.
-    """
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
@@ -112,6 +84,30 @@ def divide_images_in_folder(folder_path, output_folder):
         if filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
             input_image_path = os.path.join(folder_path, filename)
             divide_image_into_four(input_image_path, output_folder)
+
+def label_0521(directory):
+    lights = ["6500", "5700", "5000", "4000", "3500", "3000", "2700", "2200"]
+    ph_values = ["001","00", "50", "55", "60", "65", "70", "75", "80", "002"]
+    # Iterate through each image file in the directory
+    names = sorted(os.listdir(directory))
+    names = [item for item in names if not item.startswith('.')]
+    print(names)
+    for index, filename in enumerate(names):
+        if filename.endswith(".jpg"):
+            # Extract the light and ph values based on the index
+            light = lights[index % len(lights)]
+            ph = ph_values[index // len(lights) % len(ph_values)]
+            # Construct the new filename
+            new_filename = f"p_4_{ph}_{light}_pixel.jpg"
+
+            # Full paths to the old and new files
+            old_filepath = os.path.join(directory, filename)
+            new_filepath = os.path.join(directory, new_filename)
+
+            # Rename the file
+            os.rename(old_filepath, new_filepath)
+
+    print("Files have been renamed successfully.")
 
 def label_0516(directory):
     lights = ["6500", "5700", "5000", "4000", "3500", "3000", "2700", "2200"]
@@ -139,29 +135,88 @@ def label_0516(directory):
 
     print("Files have been renamed successfully.")
 
+def resize_image(image_path, output_size):
+    image = Image.open(image_path)
+    resized_image = image.resize(output_size, Image.LANCZOS)
+    return resized_image
+
+def resize_images_in_folder(input_folder,output_folder, output_size):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    for filename in os.listdir(input_folder):
+        if filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
+            input_image_path = os.path.join(input_folder, filename)
+            output_image_path = os.path.join(output_folder, f"{filename}")
+            
+            resized_image = resize_image(input_image_path, output_size)
+            resized_image.save(output_image_path)
+            print(f"Resized {filename} saved as resized_{filename}")
+
+
+def get_pixel_values(image_path, points):
+    image = Image.open(image_path).convert('RGB')
+    pixel_values = []
+    
+    for point in points:
+        pixel_value = image.getpixel(point)
+        pixel_values.append(pixel_value)
+    
+    return pixel_values
+
+def convert_rgb_to_lab(rgb):
+
+    rgb_color = sRGBColor(rgb[0], rgb[1], rgb[2], is_upscaled=True)
+    lab_color = convert_color(rgb_color, LabColor)
+    return (lab_color.lab_l, lab_color.lab_a, lab_color.lab_b)
+
+def save_pixel_values_to_csv(folders, points, output_csv):
+    # Check if the CSV file already exists
+    if os.path.exists(output_csv):
+        # Load existing data
+        df = pd.read_csv(output_csv)
+    else:
+        # Create a new DataFrame if the file does not exist
+        df = pd.DataFrame(columns=['Filename', 'X', 'Y', 'L', 'A', 'B'])
+
+    rows = []
+    for folder_path in folders:
+        for filename in os.listdir(folder_path):
+            if filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
+                image_path = os.path.join(folder_path, filename)
+                pixel_values = get_pixel_values(image_path, points)
+                for point, pixel_value in zip(points, pixel_values):
+                    L, A, B = convert_rgb_to_lab(pixel_value)
+                    rows.append({'Filename': filename, 'X': point[0], 'Y': point[1], 'L': f'{L:.2f}', 'A': f'{A:.2f}', 'B': f'{B:.2f}'})
+
+    # Create a DataFrame from the new rows
+    new_df = pd.DataFrame(rows)
+    # Concatenate the existing DataFrame with the new DataFrame
+    if not new_df.empty:
+        df = pd.concat([df, new_df], ignore_index=True)
+    
+    # Save the DataFrame to CSV
+    df.to_csv(output_csv, index=False)
+    print(f"Saved pixel values to {output_csv}")
+
+
 if __name__ == "__main__":
-    # # separate image example
-    # folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/0116/lipsnew'
-    # without_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/0116/lips_without'
-    # with_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/0116/lips_with'
-    # separate_image(folder,without_folder, with_folder)
-
-    # # center crop image example
-    # folder_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0116/lipscrop'
-    # output_folder_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0116/lipscropped_center'
+    # points = [(86, 90), (128, 96), (170, 90), (50, 140), (192, 140), (72, 180), (128, 196), (186, 180)]
+    # folder_path = "/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips_256"
+    # csv_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/LABPixelPostions.csv'
+    # folders = []
     # for pH in dir:
-    #     target_path = os.path.join(folder_path, pH)
-    #     output_size = (750, 300)
-    #     center_crop_images_in_folder(target_path, output_size,output_folder_path)
+    #     folders.append(os.path.join(folder_path, pH))
+    # save_pixel_values_to_csv(folders, points, csv_path)
 
-    # # example for label_0516
-    # folder_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0516new'
-    # label_0516(folder_path)
+    # input_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips'
+    # output_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips_256'
+    # for pH in dir:
+    #     input_folder_pH = os.path.join(input_folder, pH)
+    #     output_folder_pH = os.path.join(output_folder, pH)
+    #     resize_images_in_folder(input_folder_pH, output_folder_pH, (256, 256))
+    # label_0521('/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/pixel/0521Yue/')
 
-    # # example for separate_image
-    input_folder_path = "/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0116/lips"
-    output_folder_path = "/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0116/lips_cropped"
-    for pH in dir:
-        input_folder = os.path.join(input_folder_path, pH)
-        output_folder = os.path.join(output_folder_path, pH)
-        divide_images_in_folder(input_folder,output_folder)
+    folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
+    without_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
+    with_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Test'
+    separate_image(folder,without_folder, with_folder, selected = '2')

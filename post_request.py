@@ -10,8 +10,8 @@ import io
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 transform = transforms.Compose([
+    transforms.CenterCrop(512),
     transforms.Resize(256),
-    # transforms.CenterCrop(216),
     transforms.ToTensor()
 ])
 pH_value = {0: '5.5', 1: '6.0', 2: '6.5',3: '7.0',4: '8.0'}
@@ -34,6 +34,8 @@ def predict(model,image):
     model.eval()
     # Convert binary data to PIL Image
     image_pil = Image.open(io.BytesIO(image))
+    image_pil = image_pil.crop((500, 2000, 1800, 2700))
+    
     # Preprocess the image
     image_tensor = transform(image_pil).unsqueeze(0)
 

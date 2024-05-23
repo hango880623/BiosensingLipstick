@@ -11,4 +11,8 @@ results/
 #Ignore Imgae Data
 content/
 
+image/ 
+
+UMAP/
+
 .DS_Store/
