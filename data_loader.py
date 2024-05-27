@@ -61,11 +61,11 @@ def dataLoader_diff(base_path):
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
         transforms.Resize((512,512)),
-        transforms.CenterCrop(224),
+        transforms.CenterCrop(312),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         # transforms.Lambda(crop1000),
-        # transforms.RandomCrop((224,224)),
+        transforms.RandomCrop((224,224)),
         # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2), # brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2
         transforms.ToTensor(),
         # transforms.Normalize((0.58, 0.38, 0.5), (0.02, 0.02, 0.01))
@@ -86,9 +86,10 @@ def dataLoader_seperate(base_path):
         transforms.Resize((512,512)),
         # transforms.CenterCrop(324),
         transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
         # transforms.Lambda(crop1000),
         transforms.RandomCrop((224,224)),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2), # brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2
+        # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2), # brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2
         transforms.ToTensor(),
         # transforms.Normalize((0.58, 0.38, 0.5), (0.02, 0.02, 0.01))
     ])
@@ -108,9 +109,10 @@ def dataLoader(base_path):
         transforms.Resize((512,512)),
         # transforms.CenterCrop(324),
         transforms.RandomHorizontalFlip(),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+        transforms.RandomVerticalFlip(),
         # transforms.Lambda(crop1000),
         transforms.RandomCrop((224,224)),
+        # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2), # brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2
         transforms.ToTensor(),
         # transforms.Normalize((0.58, 0.38, 0.5), (0.02, 0.02, 0.01))
     ])
@@ -143,7 +145,7 @@ def api_dataLoader(base_path):
     # Initialize transformations for data augmentation
     transform = transforms.Compose([
         transforms.Resize((512,512)),
-        transforms.CenterCrop(324),
+        transforms.CenterCrop(312),
         transforms.CenterCrop((224,224)),
         # transforms.Resize((128,128)),
         transforms.ToTensor(),

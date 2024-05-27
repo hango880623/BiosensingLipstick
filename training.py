@@ -11,7 +11,7 @@ import numpy as np
 import os
 import datetime
 
-def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, learning_rate = 0.001, pretrained = True):
+def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 50, learning_rate = 0.001, pretrained = True, num_classes = 5):
     # Set device
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -20,7 +20,6 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
     # Load the certain model
     if model_type == 'resnet18':
         model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
-        num_classes = 5
         # Freeze layers up to layer4
         for name, param in model.named_parameters():
             if "layer4" not in name:
@@ -33,7 +32,6 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         print("model: resnet18")
     elif model_type == 'resnet50':
         model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
-        num_classes = 5
         # Freeze layers up to layer4
         for name, param in model.named_parameters():
             if "layer4" not in name:
@@ -45,14 +43,14 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
         print("model: resnet50")
     elif model_type == 'smallcnn':
-        model = SmallCNN(num_classes=5)
+        model = SmallCNN(num_classes=num_classes)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         print("model: smallcnn")
 
     print(model)
     if pretrained:
-        model_path = os.path.join(folder_name,'best.pth')
+        model_path = os.path.join(folder_name,'best_50.pth')
         model.load_state_dict(torch.load(model_path))
 
     model = model.to(device)

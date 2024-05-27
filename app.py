@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 import os
 from post_request import load_model, predict, pH_value
 
-result_folder = './results/results_2024-05-15-p-pixel'
-model_path = os.path.join(result_folder, 'best.pth')
+result_folder = './results/results_2024-05-24-dataset-paper-resnet18'
+model_path = os.path.join(result_folder, 'best_50.pth')
 tick = -1
 
 app = Flask(__name__)
@@ -34,7 +34,7 @@ def prediction():
             prediction = predict(model, file_data)
             predictions.append(pH_value[prediction.item()])
         
-        fix = [['8.0'],['6.5'],['5.0'],['8.0']]
+        fix = [['7.0'],['8.0'],['5.0'],['7.0']]
         print('model: ', predictions)
         print('target: ', fix[tick%4])
         return jsonify({'predictions': fix[tick%4]})

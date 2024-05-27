@@ -14,7 +14,7 @@ def cleanDS_Store(base_path):
     image_foldernames = os.listdir(base_path)
     for file in image_foldernames:
       if file == '.DS_Store':
-          os.remove(base_path+'.DS_Store')
+          os.remove(os.path.join(base_path,'.DS_Store'))
 
     classes = os.listdir(base_path)
     for c in classes:
@@ -25,7 +25,7 @@ def cleanDS_Store(base_path):
         continue
       for file in image_filenames:
         if file == '.DS_Store':
-            os.remove(data_path+'/.DS_Store')
+            os.remove(os.path.join(data_path,'.DS_Store'))
 
 def loadData():
     # Make the directory if it doesn't exist

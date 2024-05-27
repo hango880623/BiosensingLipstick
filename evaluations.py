@@ -8,6 +8,9 @@ from torchvision.models import ResNet18_Weights
 from torchvision.models import ResNet50_Weights
 import torch.nn as nn
 
+from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
+
 
 from model import SmallCNN
 
@@ -22,20 +25,19 @@ def plotLossGraph(train_losses,valid_losses):
     plt.title('Training and Validation Loss Curves')
     plt.show()
 
-def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18'):
+
+def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18', num_classes = 4, class_names = ['5.0','6.0','7.0','8.0']):
     # Set device
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     # Load the certain model
     if model_type == 'resnet18':
       model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
-      num_classes = 5
       model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif model_type == 'resnet50':
       model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
-      num_classes = 5
       model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif model_type == 'smallcnn':
-      model = SmallCNN(num_classes=5)
+      model = SmallCNN(num_classes=num_classes)
 
     
     model = model.to(device)
@@ -74,17 +76,31 @@ def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18'):
     # Calculate the test accuracy
     test_accuracy = 100 * np.sum(true_labels == predicted_labels) / len(true_labels)
     print(f"Test Accuracy: {test_accuracy:.2f}%")
-    metric = MulticlassConfusionMatrix(num_classes=5)
-    metric.update(torch.tensor(predicted_labels),torch.tensor(true_labels))
-    fig_, ax_ = metric.plot()
+
+    # Compute confusion matrix
+    cm = confusion_matrix(true_labels, predicted_labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+   # Plot confusion matrix
+    fig, ax = plt.subplots(figsize=(10, 10))
+    # Set the global font size
+    plt.rcParams.update({'font.size': 22})
+    disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
+    # Set the font size of x and y axis labels
+    ax.tick_params(axis='x', labelsize=20)
+    ax.tick_params(axis='y', labelsize=20)
+    ax.set_xlabel('Predicted pH', fontsize=20)
+    ax.set_ylabel('True pH', fontsize=20)
     # Save the plot to a file
-    
-    file_path = os.path.join(result_folder, 'trainmatrix.png')
-    if not os.path.exists(file_path):
-      fig_.savefig(file_path)
-    else:
-      fig_.savefig(os.path.join(result_folder, 'testmatrix.png'))
-    plt.close(fig_) 
+    file_path = os.path.join(result_folder, 'confusion_matrix.png')
+    plt.savefig(file_path)
+    plt.close(fig)
+
+    # f1 score
+    report = classification_report(true_labels, predicted_labels)
+
+    # Print and return the classification report
+    print("Classification Report:")
+    print(report)
 
     results = {'original_images': original_images, 'true_labels': true_labels, 'predicted_labels': predicted_labels, 'file_names': file_names}
     return model, results

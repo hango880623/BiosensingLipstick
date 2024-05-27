@@ -199,6 +199,47 @@ def save_pixel_values_to_csv(folders, points, output_csv):
     print(f"Saved pixel values to {output_csv}")
 
 
+def rename_files(folder_path):
+    # Get the list of files in the folder
+    files = os.listdir(folder_path)
+    
+    for file_name in files:
+        if file_name.endswith('.jpg'):
+            # Split the file name into parts based on underscores
+            parts = file_name.split('_')
+            
+            # Change the second part to '0'
+            parts[1] = '0'
+            
+            # Join the parts back into the new file name
+            new_file_name = '_'.join(parts)
+            # Construct the full old and new file paths
+            old_file_path = os.path.join(folder_path, file_name)
+            new_file_path = os.path.join(folder_path, new_file_name)
+            
+            # Rename the file
+            os.rename(old_file_path, new_file_path)
+            print(f'Renamed: {old_file_path} -> {new_file_path}')
+
+def resize_images(folder_path, resize_dim=(512, 512)):
+    # Get the list of files in the folder
+    files = os.listdir(folder_path)
+    
+    for file_name in files:
+        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
+            # Construct the full file path
+            file_path = os.path.join(folder_path, file_name)
+            
+            # Open the image
+            with Image.open(file_path) as img:
+                # Resize the image
+                resized_img = img.resize(resize_dim)
+                
+                # Save the resized image back to the same file path
+                resized_img.save(file_path)
+                print(f'Resized: {file_path}')
+
+
 if __name__ == "__main__":
     # points = [(86, 90), (128, 96), (170, 90), (50, 140), (192, 140), (72, 180), (128, 196), (186, 180)]
     # folder_path = "/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips_256"
@@ -216,7 +257,17 @@ if __name__ == "__main__":
     #     resize_images_in_folder(input_folder_pH, output_folder_pH, (256, 256))
     # label_0521('/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/pixel/0521Yue/')
 
-    folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
-    without_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
-    with_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Test'
-    separate_image(folder,without_folder, with_folder, selected = '2')
+    # folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
+    # without_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
+    # with_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Test'
+    # separate_image(folder,without_folder, with_folder, selected = '2')
+
+    # # Path to the folder containing the images
+    # folder_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0516/0516Shuyi/lips/80'
+
+    # # Call the rename function
+    # rename_files(folder_path)
+    dir = ['50','60','70','80']
+    base_path = './content/Dataset/PaperLOPO/Validation'
+    for pH in dir:
+        resize_images(os.path.join(base_path,pH),(512,512))
