@@ -1,8 +1,60 @@
 from load_data import cleanDS_Store
-from data_loader import dataLoader, dataLoader_seperate, dataLoader_diff
+from data_loader import dataLoader, dataLoaderLOPO, dataLoader_cross, dataloader_origin_test
+from evaluations import plotLossGraph, evaluation
 from training import train
 import torch
 import time
+from torchvision import datasets
+from sklearn.model_selection import KFold
+import os
+
+def lopo_analyze():
+    folder_path = './content/Dataset/Paper_divided/'
+    lopo = []
+    for id in range(5):
+        train_loader, valid_loader, test_loader = dataLoaderLOPO(folder_path,id)
+        # model_types = ['customresnet','resnet50','resnet18', 'smallcnn']
+        result_folder = './results/results_2024-07-07-dataset-paperlopodivid-resnet18/'
+
+        start_time = time.time()
+        model_path = train(result_folder, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 51, learning_rate = 0.001, pretrained=False, num_classes = 4)
+
+        end_time = time.time()
+
+        elapsed_time = end_time - start_time
+        print(f"Training time: {elapsed_time} seconds")
+
+        elapsed_time_minutes = elapsed_time / 60
+
+        print(f"Training time: {elapsed_time_minutes:.2f} minutes")
+
+        # test
+        model, test_plots, test_acc = evaluation(test_loader, result_folder,'best_50.pth', model_type = 'resnet18', num_classes = 4)
+        lopo.append(test_acc)
+    print(lopo)
+
+def k_fold_cross_validation():
+    base_path = './content/Dataset/Paper/'
+    k = 5
+    origin_dataset, test_dataset = dataloader_origin_test(base_path)
+    kf = KFold(n_splits=k, shuffle=True)
+    fold = 0
+    all_fold_accuracies = []
+    result_folder = './results/results_2024-07-07-dataset-papercrossvalid-resnet18/'
+
+    for train_idx, val_idx in kf.split(origin_dataset):
+        print(f'Fold {fold + 1}/{k}')
+        train_loader, valid_loader = dataLoader_cross(origin_dataset, train_idx, val_idx)
+        folder_name = result_folder + f'results_fold_{fold + 1}/'
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        best_model_name = train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 51, learning_rate = 0.001, pretrained=False, num_classes = 4)
+        all_fold_accuracies.append(best_model_name)
+        fold += 1
+
+    print('Cross-validation results:')
+    for i, model_name in enumerate(all_fold_accuracies):
+        print(f'Fold {i + 1}: Best model saved as {model_name}')
 
 if __name__ == "__main__":
     torch.manual_seed(99)
@@ -12,25 +64,4 @@ if __name__ == "__main__":
         print (x)
     else:
         print ("MPS device not found.")
-
-    # train_path = './content/LOPOPixelDiff/TrainDiff/'
-    # valid_path = './content/LOPOPixelDiff/ValidationDiff/'
-    # test_path = './content/LOPOPixelDiff/TestDiff/'
-    # train_loader, valid_loader, test_loader = dataLoader_diff(train_path), dataLoader_diff(valid_path), dataLoader_diff(test_path)
-
-    folder_path = './content/Dataset/PaperLOPOChange/Train'
-    train_loader, valid_loader, test_loader = dataLoader(folder_path)
-    # model_types = ['customresnet','resnet50','resnet18', 'smallcnn']
-    result_folder = './results/results_2024-05-24-dataset-paperlopochange-resnet18/'
-
-    start_time = time.time()
-    model_path = train(result_folder, train_loader, valid_loader, model_type = 'resnet18', num_epochs = 101, learning_rate = 0.001, pretrained=False, num_classes = 4)
-
-    end_time = time.time()
-
-    elapsed_time = end_time - start_time
-    print(f"Training time: {elapsed_time} seconds")
-
-    elapsed_time_minutes = elapsed_time / 60
-
-    print(f"Training time: {elapsed_time_minutes:.2f} minutes")
+    k_fold_cross_validation()

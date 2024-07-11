@@ -6,9 +6,6 @@ from skimage import color
 
 import pandas as pd
 
-from sklearn.linear_model import LinearRegression
-from load_data import cleanDS_Store
-
 from skimage.color import rgb2lab
 
 

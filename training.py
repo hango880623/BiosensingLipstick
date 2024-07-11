@@ -1,5 +1,7 @@
 import torch
 import torchvision
+from torchvision import datasets
+from sklearn.model_selection import KFold
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.models import ResNet18_Weights
 from torchvision.models import ResNet50_Weights
@@ -16,7 +18,6 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     print('Now using: ',device)
-    print(model_type)
     # Load the certain model
     if model_type == 'resnet18':
         model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
@@ -48,7 +49,7 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         print("model: smallcnn")
 
-    print(model)
+    # print(model)
     if pretrained:
         model_path = os.path.join(folder_name,'best_50.pth')
         model.load_state_dict(torch.load(model_path))
@@ -155,7 +156,7 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         # Step the learning rate scheduler
         scheduler.step(avg_valid_loss)
 
-        if epoch % 10 == 0:
+        if epoch % 50 == 0:
             # Save the best model to a file
             save_name = f'best_{epoch + resume_epoch}.pth'
             save_path = os.path.join(folder_name, save_name)
@@ -169,7 +170,143 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
             np.savetxt(os.path.join(folder_name, 'valid_losses.txt'), valid_losses_arr)
 
     print(f'Finished Training, Best Validation Accuracy: {best_accuracy:.2f}%')
+    return save_name
 
+
+def train_cross(folder_name, train_loader, valid_loader, model_type='resnet18', num_epochs=50, learning_rate=0.001, pretrained=True, num_classes=5):
+    # Set device
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    print('Now using: ', device)
+
+    # Load the model
+    if model_type == 'resnet18':
+        model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        for name, param in model.named_parameters():
+            if "layer4" not in name:
+                param.requires_grad = False
+        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+        print("model: resnet18")
+    elif model_type == 'resnet50':
+        model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
+        for name, param in model.named_parameters():
+            if "layer4" not in name:
+                param.requires_grad = False
+        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+        print("model: resnet50")
+    elif model_type == 'smallcnn':
+        model = SmallCNN(num_classes=num_classes)
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        print("model: smallcnn")
+
+    if pretrained:
+        model_path = os.path.join(folder_name, 'best_50.pth')
+        model.load_state_dict(torch.load(model_path))
+
+    model = model.to(device)
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5)
+
+    best_accuracy = 0.0
+    best_model = None
+    resume_epoch = 0
+
+    if pretrained:
+        train_losses = list(np.loadtxt(os.path.join(folder_name, 'train_losses.txt')))
+        valid_losses = list(np.loadtxt(os.path.join(folder_name, 'valid_losses.txt')))
+        resume_epoch = len(train_losses)
+    else:
+        train_losses = []
+        valid_losses = []
+
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        
+        for inputs, labels, _ in train_loader:
+            optimizer.zero_grad()
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            labels = labels.to(device)
+            loss = criterion(outputs, labels)
+
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        avg_train_loss = running_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
+
+        print(f'Epoch {epoch + 1}/{num_epochs}, Training Loss: {avg_train_loss:.4f}, Training Accuracy: {100 * correct / total:.2f}%')
+
+        with torch.no_grad():
+            valid_loss = 0.0
+            correct = 0
+            total = 0
+
+            for images, labels, _ in valid_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+                valid_loss += loss.item()
+
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+            avg_valid_loss = valid_loss / len(valid_loader)
+            valid_losses.append(avg_valid_loss)
+            accuracy = 100 * correct / total
+            print(f'Validation Loss: {avg_valid_loss:.4f}, Validation Accuracy: {accuracy:.2f}%')
+            
+            if accuracy >= best_accuracy:
+                best_accuracy = accuracy
+                best_model = model.state_dict()
+
+        scheduler.step(avg_valid_loss)
+
+        if epoch+1 % 50 == 0:
+            save_name = f'best_{epoch + resume_epoch}.pth'
+            save_path = os.path.join(folder_name, save_name)
+            torch.save(best_model, save_path)
+            np.savetxt(os.path.join(folder_name, 'train_losses.txt'), np.array(train_losses))
+            np.savetxt(os.path.join(folder_name, 'valid_losses.txt'), np.array(valid_losses))
+
+    print(f'Finished Training, Best Validation Accuracy: {best_accuracy:.2f}%')
 
     return save_name
 
+def k_fold_cross_validation(base_path, k=5, model_type='resnet18', num_epochs=50, learning_rate=0.001, pretrained=True, num_classes=5):
+    origin_dataset = datasets.ImageFolder(root=base_path)
+    kf = KFold(n_splits=k, shuffle=True)
+    fold = 0
+    all_fold_accuracies = []
+
+    for train_idx, val_idx in kf.split(origin_dataset):
+        print(f'Fold {fold + 1}/{k}')
+        train_loader, valid_loader = dataLoader(base_path, train_idx, val_idx)
+        folder_name = f'results_fold_{fold + 1}'
+        best_model_name = train(folder_name, train_loader, valid_loader, model_type, num_epochs, learning_rate, pretrained, num_classes)
+        all_fold_accuracies.append(best_model_name)
+        fold += 1
+
+    print('Cross-validation results:')
+    for i, model_name in enumerate(all_fold_accuracies):
+        print(f'Fold {i + 1}: Best model saved as {model_name}')

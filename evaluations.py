@@ -103,4 +103,4 @@ def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18', 
     print(report)
 
     results = {'original_images': original_images, 'true_labels': true_labels, 'predicted_labels': predicted_labels, 'file_names': file_names}
-    return model, results
+    return model, results, test_accuracy

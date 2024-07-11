@@ -49,32 +49,33 @@ def center_crop_images_in_folder(folder_path, output_size, output_folder):
             cropped_image.save(output_image_path)
             print(f"Center-cropped {filename} saved as cropped_{filename}")
 
-def divide_image_into_four(image_path, output_folder):
-    image = Image.open(image_path)
-    width, height = image.size
-    
-    # Calculate dimensions for each quadrant
-    half_width = width // 2
-    half_height = height // 2
-    
-    # Define the box coordinates for each quadrant
-    # boxes = [
-    #     (0, 0, half_width, half_height),         # Top-left
-    #     (half_width, 0, width, half_height),     # Top-right
-    #     (0, half_height, half_width, height),    # Bottom-left
-    #     (half_width, half_height, width, height) # Bottom-right
-    # ]
-    boxes = [(0,0,width,height),(0,0,width,height),(0,0,width,height),(0,0,width,height)]
-    
-    # Crop and save each quadrant
-    base_filename = os.path.basename(image_path)
-    filename_without_ext, ext = os.path.splitext(base_filename)
-    
-    for i, box in enumerate(boxes):
-        quadrant = image.crop(box)
-        output_image_path = os.path.join(output_folder, f"{filename_without_ext}_part{i+1}{ext}")
-        quadrant.save(output_image_path)
-        print(f"Saved {output_image_path}")
+def divide_image(image_path, output_folder, rows=2, cols=4):
+    # Open the original image
+    img = Image.open(image_path)
+    origin_filename = os.path.basename(image_path).split('.')[0]
+    img_width, img_height = img.size
+
+    # Calculate the size of each part
+    part_width = img_width // cols
+    part_height = img_height // rows
+
+    # Loop over rows and columns to create parts
+    for row in range(rows):
+        for col in range(cols):
+            if col == 0 or col == 3:
+                continue
+            left = col * part_width
+            upper = row * part_height
+            right = (col + 1) * part_width
+            lower = (row + 1) * part_height
+            
+            # Crop the image to get the part
+            part = img.crop((left, upper, right, lower))
+            
+            # Save the part to the output folder
+            part_path = os.path.join(output_folder, f"{origin_filename}_{row}_{col}.jpg")
+            part.save(part_path)
+            print(f"Saved part {row},{col} to {part_path}")
 
 def divide_images_in_folder(folder_path, output_folder):
     if not os.path.exists(output_folder):
@@ -83,7 +84,7 @@ def divide_images_in_folder(folder_path, output_folder):
     for filename in os.listdir(folder_path):
         if filename.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):
             input_image_path = os.path.join(folder_path, filename)
-            divide_image_into_four(input_image_path, output_folder)
+            divide_image(input_image_path, output_folder)
 
 def label_0521(directory):
     lights = ["6500", "5700", "5000", "4000", "3500", "3000", "2700", "2200"]
@@ -198,29 +199,6 @@ def save_pixel_values_to_csv(folders, points, output_csv):
     df.to_csv(output_csv, index=False)
     print(f"Saved pixel values to {output_csv}")
 
-
-def rename_files(folder_path):
-    # Get the list of files in the folder
-    files = os.listdir(folder_path)
-    
-    for file_name in files:
-        if file_name.endswith('.jpg'):
-            # Split the file name into parts based on underscores
-            parts = file_name.split('_')
-            
-            # Change the second part to '0'
-            parts[1] = '0'
-            
-            # Join the parts back into the new file name
-            new_file_name = '_'.join(parts)
-            # Construct the full old and new file paths
-            old_file_path = os.path.join(folder_path, file_name)
-            new_file_path = os.path.join(folder_path, new_file_name)
-            
-            # Rename the file
-            os.rename(old_file_path, new_file_path)
-            print(f'Renamed: {old_file_path} -> {new_file_path}')
-
 def resize_images(folder_path, resize_dim=(512, 512)):
     # Get the list of files in the folder
     files = os.listdir(folder_path)
@@ -242,32 +220,12 @@ def resize_images(folder_path, resize_dim=(512, 512)):
 
 if __name__ == "__main__":
     # points = [(86, 90), (128, 96), (170, 90), (50, 140), (192, 140), (72, 180), (128, 196), (186, 180)]
-    # folder_path = "/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips_256"
-    # csv_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/LABPixelPostions.csv'
-    # folders = []
+    # dir = ['50','60','70','80']
+    # base_path = './content/Dataset/PaperLOPO/Validation'
     # for pH in dir:
-    #     folders.append(os.path.join(folder_path, pH))
-    # save_pixel_values_to_csv(folders, points, csv_path)
+    #     resize_images(os.path.join(base_path,pH),(512,512))
+    folder = ['50','60','70','80']
+    for pH in folder:
+        divide_images_in_folder(os.path.join('./content/Dataset/Paper',pH),os.path.join('./content/Dataset/Paper_divided',pH))
+        # resize_images(os.path.join('./content/Dataset/Paper_divided_256',pH),(512,512))
 
-    # input_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips'
-    # output_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/lips_256'
-    # for pH in dir:
-    #     input_folder_pH = os.path.join(input_folder, pH)
-    #     output_folder_pH = os.path.join(output_folder, pH)
-    #     resize_images_in_folder(input_folder_pH, output_folder_pH, (256, 256))
-    # label_0521('/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/pixel/0521Yue/')
-
-    # folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
-    # without_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Train'
-    # with_folder = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Pixel/Test'
-    # separate_image(folder,without_folder, with_folder, selected = '2')
-
-    # # Path to the folder containing the images
-    # folder_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Canon/0516/0516Shuyi/lips/80'
-
-    # # Call the rename function
-    # rename_files(folder_path)
-    dir = ['50','60','70','80']
-    base_path = './content/Dataset/PaperLOPO/Validation'
-    for pH in dir:
-        resize_images(os.path.join(base_path,pH),(512,512))
