@@ -156,7 +156,7 @@ def train(folder_name, train_loader, valid_loader, model_type = 'resnet18', num_
         # Step the learning rate scheduler
         scheduler.step(avg_valid_loss)
 
-        if epoch % 50 == 0:
+        if epoch+1 % 50 == 0:
             # Save the best model to a file
             save_name = f'best_{epoch + resume_epoch}.pth'
             save_path = os.path.join(folder_name, save_name)
@@ -282,7 +282,7 @@ def train_cross(folder_name, train_loader, valid_loader, model_type='resnet18', 
 
         scheduler.step(avg_valid_loss)
 
-        if epoch+1 % 50 == 0:
+        if (epoch+1) % 50 == 0:
             save_name = f'best_{epoch + resume_epoch}.pth'
             save_path = os.path.join(folder_name, save_name)
             torch.save(best_model, save_path)
@@ -292,21 +292,3 @@ def train_cross(folder_name, train_loader, valid_loader, model_type='resnet18', 
     print(f'Finished Training, Best Validation Accuracy: {best_accuracy:.2f}%')
 
     return save_name
-
-def k_fold_cross_validation(base_path, k=5, model_type='resnet18', num_epochs=50, learning_rate=0.001, pretrained=True, num_classes=5):
-    origin_dataset = datasets.ImageFolder(root=base_path)
-    kf = KFold(n_splits=k, shuffle=True)
-    fold = 0
-    all_fold_accuracies = []
-
-    for train_idx, val_idx in kf.split(origin_dataset):
-        print(f'Fold {fold + 1}/{k}')
-        train_loader, valid_loader = dataLoader(base_path, train_idx, val_idx)
-        folder_name = f'results_fold_{fold + 1}'
-        best_model_name = train(folder_name, train_loader, valid_loader, model_type, num_epochs, learning_rate, pretrained, num_classes)
-        all_fold_accuracies.append(best_model_name)
-        fold += 1
-
-    print('Cross-validation results:')
-    for i, model_name in enumerate(all_fold_accuracies):
-        print(f'Fold {i + 1}: Best model saved as {model_name}')

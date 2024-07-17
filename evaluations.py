@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
 import torchvision
-from torchmetrics.classification import MulticlassConfusionMatrix
 import numpy as np
 import os
 from torchvision.models import ResNet18_Weights
@@ -14,8 +13,9 @@ from sklearn.metrics import classification_report, confusion_matrix, ConfusionMa
 
 from model import SmallCNN
 
-def plotLossGraph(train_losses,valid_losses):
-    # Plot the training and validation loss curves
+
+def plotLossGraph(train_losses, valid_losses):
+    '''Plot the training and validation loss curves'''
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label='Training Loss')
     plt.plot(valid_losses, label='Validation Loss')
@@ -26,25 +26,26 @@ def plotLossGraph(train_losses,valid_losses):
     plt.show()
 
 
-def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18', num_classes = 4, class_names = ['5.0','6.0','7.0','8.0']):
+def evaluation(test_loader, result_folder, best_model, model_type='resnet18', num_classes=4, class_names=['5.0', '6.0', '7.0', '8.0']):
+    '''Evaluate the model on the test dataset'''
     # Set device
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    device = torch.device(
+        "mps" if torch.backends.mps.is_available() else "cpu")
     # Load the certain model
     if model_type == 'resnet18':
-      model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
-      model.fc = nn.Linear(model.fc.in_features, num_classes)
+        model = torchvision.models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif model_type == 'resnet50':
-      model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
-      model.fc = nn.Linear(model.fc.in_features, num_classes)
+        model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif model_type == 'smallcnn':
-      model = SmallCNN(num_classes=num_classes)
+        model = SmallCNN(num_classes=num_classes)
 
-    
     model = model.to(device)
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
     # Load the weights from the best_model state_dict
-    model.load_state_dict(torch.load(os.path.join(result_folder,best_model)))
+    model.load_state_dict(torch.load(os.path.join(result_folder, best_model)))
 
     # Set the model in evaluation mode
     model.eval()
@@ -68,18 +69,19 @@ def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18', 
             true_labels.extend(labels.cpu().numpy())
             predicted_labels.extend(predicted.cpu().numpy())
             file_names.extend(file_name)
-            
 
     # Convert lists to NumPy arrays
     true_labels = np.array(true_labels)
     predicted_labels = np.array(predicted_labels)
     # Calculate the test accuracy
-    test_accuracy = 100 * np.sum(true_labels == predicted_labels) / len(true_labels)
+    test_accuracy = 100 * \
+        np.sum(true_labels == predicted_labels) / len(true_labels)
     print(f"Test Accuracy: {test_accuracy:.2f}%")
 
     # Compute confusion matrix
     cm = confusion_matrix(true_labels, predicted_labels)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm, display_labels=class_names)
    # Plot confusion matrix
     fig, ax = plt.subplots(figsize=(10, 10))
     # Set the global font size
@@ -102,5 +104,6 @@ def evaluation(test_loader, result_folder, best_model, model_type = 'resnet18', 
     print("Classification Report:")
     print(report)
 
-    results = {'original_images': original_images, 'true_labels': true_labels, 'predicted_labels': predicted_labels, 'file_names': file_names}
+    results = {'original_images': original_images, 'true_labels': true_labels,
+               'predicted_labels': predicted_labels, 'file_names': file_names}
     return model, results, test_accuracy
