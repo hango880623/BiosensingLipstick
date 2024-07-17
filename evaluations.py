@@ -7,7 +7,6 @@ from torchvision.models import ResNet18_Weights
 from torchvision.models import ResNet50_Weights
 import torch.nn as nn
 
-from sklearn.metrics import classification_report
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
 
 

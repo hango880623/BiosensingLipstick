@@ -101,19 +101,20 @@ def SVM(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.1, random_state=42)
 
-    # # Define paramerter range
-    # param_grid = {'C': [0.1, 1, 10, 100, 1000],
-    #           'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    #           'kernel': ['rbf']}
-    # grid = GridSearchCV(SVC(), param_grid, refit = True, verbose = 3)
+    # Define paramerter range
+    param_grid = {'C': [0.1, 1, 10, 100, 1000],
+                  'gamma': [100, 10, 1, 0.1, 0.01, 0.001],
+                  'kernel': ['rbf']}
+    grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=3)
 
-    # grid.fit(X_train, y_train)
+    grid.fit(X_train, y_train)
 
-    # print(grid.best_params_)
-    # print(grid.best_estimator_)
+    print(grid.best_params_)
+    print(grid.best_estimator_)
 
     # Initialize the SVM classifier
     svm = SVC()
+    '''(C=1.0, kernel='rbf',gamma='scale')'''
     svm_grid = SVC(kernel='rbf', gamma=0.001, C=1000)
 
     # Train the SVM model
