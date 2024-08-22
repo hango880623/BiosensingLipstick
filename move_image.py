@@ -1,8 +1,10 @@
 import os
+import shutil
 from PIL import Image
 import pandas as pd
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
+import random
 
 dir = ['55', '60', '65', '70', '80']
 
@@ -55,7 +57,7 @@ def center_crop_images_in_folder(folder_path, output_folder, output_size):
             print(f"Center-cropped {filename} saved as cropped_{filename}")
 
 
-def divide_image(image_path, output_folder, rows=2, cols=2):
+def divide_image(image_path, output_folder, rows=2, cols=4):
     img = Image.open(image_path)
     origin_filename = os.path.basename(image_path).split('.')[0]
     img_width, img_height = img.size
@@ -90,18 +92,20 @@ def divide_images_in_folder(folder_path, output_folder):
             divide_image(input_image_path, output_folder)
 
 
-def label_0521(directory):
+def label_0719(id, directory, device):
     lights = ["6500", "5700", "5000", "4000", "3500", "3000", "2700", "2200"]
-    ph_values = ["001", "00", "50", "55", "60", "65", "70", "75", "80", "002"]
+    ph_values = ["00", "50", "60", "70", "80", "no"]
+    types = ["s", "g"]
     names = sorted(os.listdir(directory))
     names = [item for item in names if not item.startswith('.')]
     print(names)
     for index, filename in enumerate(names):
-        if filename.endswith(".jpg"):
+        if filename.endswith((".jpg", ".png", ".jpeg",".JPG", ".PNG", ".JPEG", ".HEIC")):
 
             light = lights[index % len(lights)]
             ph = ph_values[index // len(lights) % len(ph_values)]
-            new_filename = f"p_4_{ph}_{light}_pixel.jpg"
+            type = types[index // len(lights) // len(ph_values)]
+            new_filename = f"{type}_p_{id}_{ph}_{light}_{device}.jpg"
 
             old_filepath = os.path.join(directory, filename)
             new_filepath = os.path.join(directory, new_filename)
@@ -189,16 +193,70 @@ def resize_images(folder_path, resize_dim=(512, 512)):
                 resized_img.save(file_path)
                 print(f'Resized: {file_path}')
 
+points = [(86, 90), (128, 96), (170, 90), (50, 140), (192, 140), (72, 180), (128, 196), (186, 180)]
+
+def separate_images_by_filename_segment(source_folder):
+    if not os.path.exists(source_folder):
+        print(f"Source folder '{source_folder}' does not exist.")
+        return
+
+    for filename in os.listdir(source_folder):
+        segments = filename.split('_')
+        if len(segments) > 3:
+            segment = segments[3]
+            destination_folder = os.path.join(source_folder, segment)
+            if not os.path.exists(destination_folder):
+                os.makedirs(destination_folder)
+            
+            source_path = os.path.join(source_folder, filename)
+            destination_path = os.path.join(destination_folder, filename)
+            shutil.move(source_path, destination_path)
+            print(f"Moved '{filename}' to '{destination_folder}'")
+        else:
+            print(f"Filename '{filename}' does not have enough segments.")
+
+def split_dataset(root_path, train_path, test_path, test_ratio=0.1):
+    labels = ['50', '60', '70', '80']
+    for label in labels:
+        folder_path = os.path.join(root_path, label)
+        images = os.listdir(folder_path)
+        random.shuffle(images)
+        
+        split_point = int(len(images) * test_ratio)
+        test_images = images[:split_point]
+        train_images = images[split_point:]
+
+        train_label_path = os.path.join(train_path, label)
+        test_label_path = os.path.join(test_path, label)
+
+        os.makedirs(train_label_path, exist_ok=True)
+        os.makedirs(test_label_path, exist_ok=True)
+
+        for image in train_images:
+            shutil.copy(os.path.join(folder_path, image), os.path.join(train_label_path, image))
+
+        for image in test_images:
+            shutil.copy(os.path.join(folder_path, image), os.path.join(test_label_path, image))
+
+        print(f"Label {label}: {len(train_images)} images in training, {len(test_images)} images in testing.")
+
 
 if __name__ == "__main__":
-    # points = [(86, 90), (128, 96), (170, 90), (50, 140), (192, 140), (72, 180), (128, 196), (186, 180)]
-    # dir = ['50','60','70','80']
-    # base_path = './content/Dataset/PaperLOPO/Validation'
-    # for pH in dir:
-    #     resize_images(os.path.join(base_path,pH),(512,512))
+    # Divide images example
+    
     folder = ['50', '60', '70', '80']
     for pH in folder:
         # center_crop_images_in_folder(os.path.join('./content/Dataset/Paper',pH),os.path.join('./content/Dataset/Paper_center_crop',pH),(324,324))
         # resize_images(os.path.join('./content/Dataset/Paper_divided_256',pH),(512,512))
-        divide_images_in_folder(os.path.join('./content/Dataset/Paper_center_crop', pH),
-                                os.path.join('./content/Dataset/Paper_center_crop_divided', pH))
+        divide_images_in_folder(os.path.join('./content/Dataset/Paper0725', pH),
+                                os.path.join('./content/Dataset/Paper0725_divided', pH))
+    
+
+    # separate_images_by_filename_segment('/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Paper0725')
+
+    # # Example usage:
+    # root_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Paper0725'
+    # train_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Paper0725Train'
+    # test_path = '/Users/kuyuanhao/Documents/Research Assistant/Interactive Organisms Lab/data/Paper0725Test'
+
+    # split_dataset(root_path, train_path, test_path)

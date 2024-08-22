@@ -9,19 +9,18 @@ from torch.utils.data import DataLoader
 import os
 
 
-def lopo_analyze():
+def lopo_analyze(folder_path, result_folder):
     '''Leave One Participant Out analysis'''
-    folder_path = './content/Dataset/Paper_divided/'
     lopo = []
-    for id in range(5):
+    ids = [0, 1, 2, 4, 5, 6]
+    for id in ids:
         train_loader, valid_loader, test_loader = dataLoaderLOPO(
             folder_path, id)
         # model_types = ['customresnet','resnet50','resnet18', 'smallcnn']
-        result_folder = './results/results_2024-07-07-dataset-paperlopodivid-resnet18/'
 
         start_time = time.time()
         model_path = train(result_folder, train_loader, valid_loader, model_type='resnet18',
-                           num_epochs=51, learning_rate=0.001, pretrained=False, num_classes=4)
+                           num_epochs=50, learning_rate=0.001, pretrained=False, num_classes=4)
 
         end_time = time.time()
 
@@ -39,15 +38,13 @@ def lopo_analyze():
     print(lopo)
 
 
-def k_fold_cross_validation():
+def k_fold_cross_validation(base_path,result_folder):
     '''K-Fold Cross Validation analysis'''
-    base_path = './content/Dataset/Paper_center_crop_divided/'
     k = 5
     origin_dataset, test_dataset = dataloader_origin_test(base_path)
     kf = KFold(n_splits=k, shuffle=True)
     fold = 0
     all_fold_accuracies = []
-    result_folder = './results/results_2024-07-16-dataset-papercrossvalid-resnet18/'
 
     for train_idx, val_idx in kf.split(origin_dataset):
         print(f'Fold {fold + 1}/{k}')
@@ -57,15 +54,13 @@ def k_fold_cross_validation():
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
         best_model_name = train(folder_name, train_loader, valid_loader, model_type='resnet18',
-                                num_epochs=101, learning_rate=0.001, pretrained=False, num_classes=4)
+                                num_epochs=50, learning_rate=0.001, pretrained=False, num_classes=4)
         all_fold_accuracies.append(best_model_name)
         fold += 1
 
     print('Cross-validation results:')
     for i, model_name in enumerate(all_fold_accuracies):
         print(f'Fold {i + 1}: Best model saved as {model_name}')
-
-    test(base_path, result_folder)
 
 
 if __name__ == "__main__":
@@ -76,4 +71,11 @@ if __name__ == "__main__":
         print(x)
     else:
         print("MPS device not found.")
-    k_fold_cross_validation()
+    base_path = './content/Dataset/Paper0725_divided/'
+    result_folder = './results/results_2024-07-25-dataset-papercrossvalid-resnet18-divide/'
+    # k_fold_cross_validation(base_path, result_folder)
+    
+    fold = 'results_fold_2'
+    print(fold)
+    test(base_path, os.path.join(result_folder,fold))
+    # lopo_analyze(base_path, result_folder)

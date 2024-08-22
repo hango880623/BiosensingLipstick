@@ -5,6 +5,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
+
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
@@ -47,6 +51,7 @@ def KNN(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
 
 
 def RF(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
+    print("Random Forest")
     df = pd.read_csv(csv_file_path)
     X = df[color]
     y = df["pH"]
@@ -61,8 +66,8 @@ def RF(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
     param_grid = {
         'n_estimators': [25, 50, 100, 150],
         'max_features': ['sqrt', 'log2', None],
-        'max_depth': [3, 6, 9],
-        'max_leaf_nodes': [3, 6, 9],
+        'max_depth': [3, 6, 9, None],
+        'max_leaf_nodes': [3, 6, 9, None],
     }
     # # Initialize GridSearchCV with 5-fold cross-validation
     # grid_search = GridSearchCV(RandomForestClassifier(), param_grid=param_grid, cv=5)
@@ -75,10 +80,7 @@ def RF(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
     y_test_out = df_test["pH"]
     y_test_out = label_encoder.fit_transform(y_test_out)
 
-    model_grid = RandomForestClassifier(max_depth=9,
-                                        max_features="log2",
-                                        max_leaf_nodes=9,
-                                        n_estimators=50)
+    model_grid = RandomForestClassifier(max_depth=6,max_features = 'log2')
     model = RandomForestClassifier()
 
     model_grid.fit(X_train, y_train)
@@ -91,6 +93,7 @@ def RF(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
 
 
 def SVM(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
+    print("SVM")
     df = pd.read_csv(csv_file_path)
     X = df[color]
     y = df["pH"]
@@ -115,7 +118,7 @@ def SVM(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
     # Initialize the SVM classifier
     svm = SVC()
     '''(C=1.0, kernel='rbf',gamma='scale')'''
-    svm_grid = SVC(kernel='rbf', gamma=0.001, C=1000)
+    svm_grid = SVC(kernel='rbf', gamma=0.001, C=100)
 
     # Train the SVM model
     svm.fit(X_train, y_train)
@@ -137,37 +140,53 @@ def SVM(csv_file_path, csv_file_path2, color=["r", "g", "b"]):
     print(classification_report(y_test, y_pred_grid))
 
 
-def predict_pH(lab_value):
-    # Predefined LAB values for pH levels
-    nearest_lab = {
-        50: [6.22, 29.84, 12.30],
-        60: [20.30, 27.19, 11.98],
-        70: [28.22, 35.76, 15.11],
-        80: [17.91, 17.94, 3.04]
-    }
+def predict_pH(lab_value, nearest_lab):
     # Find the nearest pH value based on Euclidean distance
-    nearest_pH = min(nearest_lab.keys(), key=lambda pH: euclidean(
-        lab_value, nearest_lab[pH]))
+    nearest_pH = min(nearest_lab.keys(), key=lambda pH: euclidean(lab_value, nearest_lab[pH]))
     return nearest_pH
 
+def predict_pH(lab_value, nearest_lab):
+    # Find the nearest pH value based on Euclidean distance
+    nearest_pH = min(nearest_lab.keys(), key=lambda pH: euclidean(lab_value, nearest_lab[pH]))
+    return nearest_pH
 
-def Nearest(csv_file_path, csv_file_path2, color=['L', 'A', 'B']):
-    df_train = pd.read_csv(csv_file_path)
-    df_test = pd.read_csv(csv_file_path2)
+def compute_nearest_lab(X_train, y_train, color):
+    nearest_lab = {}
+    df_train = pd.DataFrame(X_train, columns=color)
+    df_train['pH'] = y_train
+    for pH in np.unique(y_train):
+        avg_values = df_train[df_train['pH'] == pH][color].mean().tolist()
+        nearest_lab[pH] = avg_values
+    return nearest_lab
 
-    X_test = df_test[color].values
-    y_test = df_test['pH'].values
+def Nearest(csv_file_path, color=['L', 'A', 'B']):
+    df = pd.read_csv(csv_file_path)
+    X = df[color].values
+    y = df["pH"].values
 
-    y_pred = np.array([predict_pH(lab) for lab in X_test])
-    print(classification_report(y_test, y_pred))
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit_transform(y)
 
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y_encoded, test_size=0.1, random_state=42
+    )
+
+    # Compute average LAB values for each pH class in the training dataset
+    nearest_lab = compute_nearest_lab(X_train, y_train, color)
+
+    y_pred = np.array([predict_pH(lab, nearest_lab) for lab in X_test])
+    
+    # Convert the encoded y_test back to original labels for a meaningful classification report
+    y_test_orig = label_encoder.inverse_transform(y_test)
+    y_pred_orig = label_encoder.inverse_transform(y_pred)
+    
+    print(classification_report(y_test_orig, y_pred_orig))
 
 if __name__ == '__main__':
-    # csv_file_path = './content/Dataset/PaperLOPODiffLAB/Train/median_rgb_values.csv'
-    # csv_file_path2 = './content/Dataset/PaperLOPODiffLAB/Test/median_rgb_values.csv'
-    csv_file_path = './content/Dataset/Paper512/median_rgb_values.csv'
-    csv_file_path2 = './content/Dataset/Paper512/median_rgb_values.csv'
-    # Nearest(csv_file_path, csv_file_path2, color=["L", "A", "B"])
-    # KNN(csv_file_path, csv_file_path2, color=["L", "A", "B"])
-    SVM(csv_file_path, csv_file_path2, color=["L", "A", "B"])
-    # SVM(csv_file_path, csv_file_path2, color=["L", "A", "B"])
+    csv_file_path = './content/Dataset/Paper0725_divided/median_rgb_values.csv'
+    csv_file_path2 = './content/Dataset/Paper0725_divided/median_rgb_values.csv'
+
+    # Nearest(csv_file_path, color=["r", "g", "b"])
+    RF(csv_file_path, csv_file_path2, color=["r", "g", "b"])
+    # SVM(csv_file_path, csv_file_path2, color=["r", "g", "b"])
+

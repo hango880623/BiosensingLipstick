@@ -84,13 +84,13 @@ def evaluation(test_loader, result_folder, best_model, model_type='resnet18', nu
    # Plot confusion matrix
     fig, ax = plt.subplots(figsize=(10, 10))
     # Set the global font size
-    plt.rcParams.update({'font.size': 22})
+    plt.rcParams.update({'font.size': 28})
     disp.plot(ax=ax, cmap=plt.cm.Blues, values_format='d')
     # Set the font size of x and y axis labels
-    ax.tick_params(axis='x', labelsize=20)
-    ax.tick_params(axis='y', labelsize=20)
-    ax.set_xlabel('Predicted pH', fontsize=20)
-    ax.set_ylabel('True pH', fontsize=20)
+    ax.tick_params(axis='x', labelsize=26)
+    ax.tick_params(axis='y', labelsize=26)
+    ax.set_xlabel('Predicted pH', fontsize=26)
+    ax.set_ylabel('True pH', fontsize=26)
     # Save the plot to a file
     file_path = os.path.join(result_folder, 'confusion_matrix.png')
     plt.savefig(file_path)

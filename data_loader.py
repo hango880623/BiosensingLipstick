@@ -38,17 +38,34 @@ class ImageFolderWithPaths(datasets.ImageFolder):
             image_rgb_tensor, original_tuple[1], file_name)
         return tuple_with_lab_and_path
 
+# transform = transforms.Compose([
+#         transforms.Resize((512, 512)),
+#         transforms.CenterCrop(324),
+#         transforms.RandomHorizontalFlip(),
+#         transforms.RandomVerticalFlip(),
+#         transforms.RandomCrop((224, 224)),
+#         transforms.ToTensor(),
+#     ])
 
 def dataloader_origin_test(base_path):
     '''Load the dataset and split it into training and test sets'''
 
-    # Initialize transformations for data augmentation
+    # # Initialize transformations for data augmentation
+    # transform = transforms.Compose([
+    #     transforms.Resize((512, 512)),
+    #     transforms.CenterCrop(324),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.RandomVerticalFlip(),
+    #     transforms.Resize((224, 224)),
+    #     transforms.ToTensor(),
+    # ])
+
     transform = transforms.Compose([
-        transforms.Resize((324, 324)),
+        transforms.Resize((128, 128)),
         # transforms.CenterCrop(324),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.RandomCrop((224, 224)),
+        # transforms.RandomCrop((224, 224)),
         transforms.ToTensor(),
     ])
 
@@ -149,11 +166,20 @@ def dataLoaderLOPO(base_path, leave_out_id):
     '''Load the dataset and split it into training, validation, and test sets. For Leave One Participant Out purposes'''
     batch_size = 8
 
+    # transform = transforms.Compose([
+    #     transforms.Resize((512, 512)),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.RandomVerticalFlip(),
+    #     transforms.RandomCrop((224, 224)),
+    #     transforms.ToTensor(),
+    # ])
+
     transform = transforms.Compose([
-        transforms.Resize((512, 512)),
+        transforms.Resize((128, 128)),
+        # transforms.CenterCrop(324),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.RandomCrop((224, 224)),
+        # transforms.RandomCrop((224, 224)),
         transforms.ToTensor(),
     ])
 
@@ -168,7 +194,7 @@ def dataLoaderLOPO(base_path, leave_out_id):
 
     for idx in range(len(origin_dataset)):
         image, label, file_name = origin_dataset[idx]
-        participant_id = int(file_name.split('_')[1])
+        participant_id = int(file_name.split('_')[2])
         if participant_id == leave_out_id:
             test_data.append((image, label, file_name))
         else:
